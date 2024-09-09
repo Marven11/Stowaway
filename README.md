@@ -63,6 +63,13 @@ Stowaway一共包含两种角色，分别是：
 - 上游: 指当前操作的节点与其父节点之间的流量
 - 下游：指当前操作的节点与其**所有**子节点之间的流量
 
+### 快速启动
+
+以下命令可以快速启动最简单的stowaway实例
+
+- admin: `./stowaway_admin -l 9999`
+- agent: `./stowaway_agent -c <stowaway_admin's IP>:9999`
+
 ### 参数解析
 
 - admin
@@ -78,7 +85,7 @@ Stowaway一共包含两种角色，分别是：
 --http-proxy http代理服务器地址
 --down 下游协议类型,默认为裸TCP流量,可选HTTP/WS
 --tls-enable 为节点通信启用TLS，在启用TLS后，AES加密将被禁用
---domain 指定TLS SNI域名，若为空，默认为目标节点地址
+--domain 指定TLS SNI/WebSocket域名，若为空，默认为目标节点地址
 --heartbeat 开启心跳包
 ```
 
@@ -100,7 +107,7 @@ Stowaway一共包含两种角色，分别是：
 --down 下游协议类型,默认为裸TCP流量,可选HTTP/WS
 --cs 运行平台的shell编码类型，默认为utf-8，可选gbk
 --tls-enable 为节点通信启用TLS，在启用TLS后，AES加密将被禁用
---domain 指定TLS SNI域名，若为空，默认为目标节点地址
+--domain 指定TLS SNI/WebSocket域名，若为空，默认为目标节点地址
 ```
 
 ### 参数用法
@@ -169,9 +176,9 @@ Stowaway一共包含两种角色，分别是：
 
 - agent:  `./stowaway_agent -c 127.0.0.1:9999 --up ws` or `./stowaway_agent -c 127.0.0.1:9999 --up ws --down ws`
 
-**注意一点，当你设置了某一节点上/下游为TCP/HTTP/WS流量后，与其连接的父/子节点的下/上游流量必须设置为一致！**
+另外需要注意两点：
 
-如下
+第一，当你设置了某一节点上/下游为TCP/HTTP/WS流量后，与其连接的父/子节点的下/上游流量必须设置为一致，如下
 
 - admin:  `./stowaway_admin -c 127.0.0.1:9999 --down ws`
 
@@ -186,6 +193,10 @@ agent间也一样
 那么agent-2也必须设置`--up`为ws，否则会导致网络出错
 
 - agent-2:  `./stowaway_agent -c 127.0.0.1:10000 --up ws`
+
+第二，由于http是半双工的协议，并不是很适合stowaway全双工的通信性质，所以这里http协议仅实现了http消息格式，并不是完整功能的http工作流，所以你仍然可以使用这个协议，但是stowaway之间的流量在选择以http消息格式传输时无法通过nginx转发，这部分代码及功能保留一方面为了某些特殊情况下http协议的使用，另一方面也提供一个自定义流量的模版，方便用户自定义协议时拿来参考
+
+如需通过nginx等反代，请使用ws协议，并搭配上TLS进行通讯
 
 #### --reconnect
 
@@ -233,13 +244,11 @@ agent之间也与上面情况一致
 
 这两个参数admin&&agent用法一致，仅可用在主动模式下
 
-通过设置此选项，可以设置当前此节点TLS协商时的SNI选项
+通过设置此选项，可以设置当前此节点TLS协商时的SNI选项或者WebSocket的目标Host
 
 示例如下
 - admin: `./stowaway_admin -l 10000 --tls-enable -s 123`
 - agent: `./stowaway_agent -c xxx.xxx.xxx.xxx:10000 --tls-enable -s 123 --domain xxx.com`
-
-注意，此参数启用必须配合--tls-enable参数，否则此参数无效
 
 #### --heartbeat
 

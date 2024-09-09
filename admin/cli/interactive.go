@@ -70,14 +70,14 @@ func (console *Console) start() {
 	helper := NewHelper()
 	go helper.Run()
 
+	fmt.Print(console.status)
 	// Tested on:
 	// Macos Catalina iterm2/original terminal
 	// Ubuntu desktop 16.04/18.04
 	// Ubuntu server 16.04
 	// Centos 7
 	// Win10 x64 Professional
-	// May have problems when the console working on some terminal since I'm using escape sequence,so if ur checking code after face this situation,let me know if possible
-	fmt.Print(console.status)
+	// May have problems when the console working on some terminal since I'm using escape sequence.
 	for {
 		event := termbox.PollEvent()
 		if event.Err != nil {
@@ -372,9 +372,16 @@ func (console *Console) start() {
 		} else if event.Key == termbox.KeyCtrlC {
 			// Ctrl+C?
 			if !console.shellMode && !console.sshMode {
-				printer.Warning("\r\n[*]Please use 'exit' to exit stowaway or use 'back' to return to parent panel")
+				printer.Warning("\r\n[*] Please use 'exit' to exit stowaway or use 'back' to return to parent panel")
 			} else {
-				printer.Warning("\r\n[*]Please use 'exit' to exit shell/sshmode")
+				printer.Warning("\r\n[*] Press 'Enter' to force quit shell/ssh mode, other keys to continue")
+				event := termbox.PollEvent()
+				if event.Key == termbox.KeyEnter {
+					console.mgr.ConsoleManager.Exit <- true
+					printer.Success("\r\n[*] Quit shell/ssh mode successfully, press 'Enter' to continue")
+				} else {
+					printer.Warning("\r\n[*] Continue shell/ssh mode, press 'Enter' to continue")
+				}
 			}
 		} else {
 			if !console.shellMode && !console.sshMode {
